@@ -44,3 +44,10 @@ implementing the full sharder application stack.
 test_sharder.py defines an in-memory sqlite database to test the sharder
 application. The tests demonstrate how to add new rows to the database and check
 that they are "fairly" assigned according to the sharder policy.
+```
+ $ pytest
+ ...
+test_sharder.py ...                                              [100%]
+
+======================= 3 passed in 0.76 seconds =======================
+```
