@@ -1,0 +1,5 @@
+[
+  "test_sharder.py::test_single_shard",
+  "test_sharder.py::test_multiple_equal_shards",
+  "test_sharder.py::test_multiple_unequal_shards"
+]
