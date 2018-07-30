@@ -1,6 +1,8 @@
 import pytest
 import sqlalchemy
 
+from tornado import log
+
 from sharder import Sharder
 
 @pytest.fixture
@@ -9,7 +11,7 @@ def engine():
     return engine
 
 def test_single_shard(engine):
-    s = Sharder(engine, 'hub', ['hub-1'])
+    s = Sharder(engine, 'hub', ['hub-1'], log=log)
     assert s.shard('user') == 'hub-1'
 
 def test_multiple_equal_shards(engine):
@@ -20,7 +22,7 @@ def test_multiple_equal_shards(engine):
     buckets = [str(i) for i in range(10)]
     entries = [str(i) for i in range(100)]
 
-    s = Sharder(engine, 'hub', buckets)
+    s = Sharder(engine, 'hub', buckets, log=log)
     [s.shard(e) for e in entries]
 
     shards = {}
@@ -45,7 +47,7 @@ def test_multiple_unequal_shards(engine):
     buckets = [str(i) for i in range(10)]
     entries = [str(i) for i in range(99)]
     
-    s = Sharder(engine, 'hub', buckets)
+    s = Sharder(engine, 'hub', buckets, log=log)
     [s.shard(e) for e in entries]
     
     shards = {}

@@ -25,23 +25,31 @@ class ShardHandler(tornado.web.RequestHandler):
             log.app_log.info(f'Failed to find REMOTE_USER')
             raise web.HTTPError(401)
 
-        shard_info = yield self.shard(remote_user)
+        hub = yield self.shard(remote_user)
+        
+        # At this point, I *think* we want to build a new request, set the hub
+        # cookie and move on to the
+        # headers = self.request.headers.copy()
+        # headers['Cookie'] = f'hub={hub}'
+        yield self.proxy_get(self.request.path, hub)
 
-
+    def proxy_get(self, path, hub):
+        pass
 
 if __name__ == "__main__":
     from sqlalchemy import create_engine
     from sharder import Sharder, Base
+    import sqlite3
 
     log.enable_pretty_logging()
 
     # Give ourselves a database to play with. This should probably become an
     # application configuration item e.g. --sqlite, --posgtres. Anything that
     # returns an engine should work
-    # N.B. this doesn't work in :memory: yet, probably because of my session
-    # handling
-    # engine = create_engine('sqlite:///:memory:', echo=True)
-    engine = create_engine('sqlite:///hub.sqlite', echo=True)
+    # We have to be careful with in memory databases and shared cache, see
+    # https://stackoverflow.com/questions/27910829/sqlalchemy-and-sqlite-shared-cache
+    creator = lambda: sqlite3.connect('file::memory:?cache=shared', uri=True)
+    engine = create_engine('sqlite://', creator=creator, echo=True)
 
     sharder_buckets = [f'hub-{hub}' for hub in range(5)]
 
@@ -50,6 +58,6 @@ if __name__ == "__main__":
     app = web.Application([
         (r"/", ShardHandler),
     ], sharder=sharder, header='REMOTE_USER')
-
+#
     app.listen(8888)
     tornado.ioloop.IOLoop.current().start()
