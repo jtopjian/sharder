@@ -10,10 +10,11 @@ class Sharder:
     across multiple buckets, ensuring that once an object is assigned to a bucket it always
     is assigned to the same bucket.
     """
-    def __init__(self, engine, kind, buckets):
+    def __init__(self, engine, kind, buckets, log):
         self.engine  = engine
         self.kind    = kind
         self.buckets = buckets
+        self.log = log
 
         Base.metadata.create_all(engine)
 
