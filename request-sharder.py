@@ -27,14 +27,14 @@ class ShardHandler(tornado.web.RequestHandler):
 
         hub = yield self.shard(remote_user)
         
-        # At this point, I *think* we want to build a new request, set the hub
-        # cookie and move on to the
-        # headers = self.request.headers.copy()
-        # headers['Cookie'] = f'hub={hub}'
-        yield self.proxy_get(self.request.path, hub)
+        self.request.headers['Cookie'] = f'hub={hub}'
+        self.redirect('/barf')
 
-    def proxy_get(self, path, hub):
-        pass
+class BarfHandler(tornado.web.RequestHandler):
+    @gen.coroutine
+    def get(self):
+        log.app_log.info('Barf called')
+        self.write("Hello, world")
 
 if __name__ == "__main__":
     from sqlalchemy import create_engine
@@ -57,7 +57,12 @@ if __name__ == "__main__":
 
     app = web.Application([
         (r"/", ShardHandler),
-    ], sharder=sharder, header='REMOTE_USER')
+        (r"/barf", BarfHandler),
+    ], 
+    sharder=sharder, 
+    header='REMOTE_USER',
+    cookie_secret='__TODO:_GENERATE_A_RANDOM_VALUE_HERE__'
+    )
 #
     app.listen(8888)
     tornado.ioloop.IOLoop.current().start()
