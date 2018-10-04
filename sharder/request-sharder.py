@@ -39,6 +39,7 @@ class BarfHandler(tornado.web.RequestHandler):
 if __name__ == "__main__":
     from sqlalchemy import create_engine
     from sharder import Sharder, Base
+    import os
     import sqlite3
 
     log.enable_pretty_logging()
@@ -46,11 +47,24 @@ if __name__ == "__main__":
     # Give ourselves a database to play with. This should probably become an
     # application configuration item e.g. --sqlite, --posgtres. Anything that
     # returns an engine should work
+
+    ##
+    ## sqlite (in memory)
+    ##
     # We have to be careful with in memory databases and shared cache, see
     # https://stackoverflow.com/questions/27910829/sqlalchemy-and-sqlite-shared-cache
-    creator = lambda: sqlite3.connect('file::memory:?cache=shared', uri=True)
-    engine = create_engine('sqlite://', creator=creator, echo=True)
 
+    ##
+    ## postgresql
+    ##
+    #creator = lambda: sqlite3.connect('file::memory:?cache=shared', uri=True)
+    #engine = create_engine('sqlite://', creator=creator, echo=True)
+    username = os.environ['POSTGRES_USER']
+    password = os.environ['POSTGRES_PASSWORD']
+    database = os.environ['POSTGRES_DB']
+    engine = create_engine(f'postgresql://{username}:{password}@db/{database}',
+            connect_args={'connect_timeout': 10})
+    
     sharder_buckets = [f'hub-{hub}' for hub in range(5)]
 
     sharder = Sharder(engine, 'hub', sharder_buckets, log.app_log)

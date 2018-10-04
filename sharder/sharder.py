@@ -41,14 +41,14 @@ class Sharder:
             return bucket
 
         # name isn't assigned to a bucket yet, add an entry
-        q = (self.session.query(Shard, func.count(Shard.bucket)
+        q = (self.session.query(Shard.bucket, func.count(Shard.bucket)
             .label('total'))
             .filter(Shard.kind == self.kind)
             .group_by(Shard.bucket)
             .order_by('total').first()
         )
         if q:
-            bucket = q[0].bucket
+            bucket = q.bucket
         self.session.add(Shard(kind=self.kind, bucket=bucket, name=name))
         self.session.commit()
 

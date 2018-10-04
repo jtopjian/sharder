@@ -37,7 +37,18 @@ for the new assignment, set the cookie, and send the user back to nginx.
 ### As an application
 
 A docker-compose file will be provided to spin up nginx, postgresql and tornado,
-implementing the full sharder application stack.
+implementing the full sharder application stack. For the moment
+```
+python3.6 request-sharder.py
+```
+Will initialize a sqlite database (with the right behaviour for multiple
+connections) and setup a tornado webserver. You can make requests against the
+webserver with the REMOTE_USER header set, e.g.
+```
+  curl -H 'REMOTE_USER: iana 127.0.0.1:8888
+```
+The output of the request-sharder application should let you know the result of
+the assignment.
 
 ### Standalone/pytest
 
