@@ -26,8 +26,9 @@ class ShardHandler(tornado.web.RequestHandler):
             raise web.HTTPError(401)
 
         hub = yield self.shard(remote_user)
-        
-        self.request.headers['Cookie'] = f'hub={hub}'
+
+        self.set_cookie('hub', hub)
+        #self.request.headers['Cookie'] = f'hub={hub}'
         self.redirect('/barf')
 
 class BarfHandler(tornado.web.RequestHandler):
