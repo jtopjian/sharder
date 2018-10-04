@@ -2,10 +2,11 @@ version: '3'
 
 services:
   nginx:
-    image: nginx:stable-alpine
+    build: ./edge
     container_name: edge
     ports:
       - "8080:80"
+    command: /bin/bash -c "envsubst '' < /etc/nginx/nginx.template > /etc/nginx/nginx.conf && exec nginx -g 'daemon off;'"
   
   sharder:
     build: ./sharder
