@@ -23,7 +23,7 @@ class ShardHandler(tornado.web.RequestHandler):
 
         if remote_user == "":
             log.app_log.info(f'Failed to find REMOTE_USER')
-            raise web.HTTPError(401)
+            raise web.HTTPError(401, "Hub sharder unable to find auth headers")
 
         hub = yield self.shard(remote_user)
 
@@ -36,6 +36,12 @@ class BarfHandler(tornado.web.RequestHandler):
     def get(self):
         log.app_log.info('Barf called')
         self.write("Hello, world")
+
+class HubHandler(tornado.web.RequestHandler):
+    @gen.coroutine
+    def get(self, hub):
+        log.app_log.info('Hub Handler')
+        self.write(f'hub assigned: {hub}')
 
 if __name__ == "__main__":
     from sqlalchemy import create_engine
@@ -71,8 +77,9 @@ if __name__ == "__main__":
     sharder = Sharder(engine, 'hub', sharder_buckets, log.app_log)
 
     app = web.Application([
-        (r"/", ShardHandler),
-        (r"/barf", BarfHandler),
+        (r"/shard", ShardHandler),
+        (r"/hubs/(hub-[0-9]+)", HubHandler),
+        (r"/", BarfHandler),
     ], 
     sharder=sharder, 
     header='REMOTE_USER',

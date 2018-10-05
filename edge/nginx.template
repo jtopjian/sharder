@@ -14,6 +14,8 @@ http {
     include       /etc/nginx/mime.types;
     default_type  application/octet-stream;
 
+    resolver 127.0.0.11;
+
     log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
                       '$status $body_bytes_sent "$http_referer" '
                       '"$http_user_agent" "$http_x_forwarded_for"';
@@ -26,14 +28,16 @@ http {
 
     # Look for a cookie called hub and pick the upstream location
     map $cookie_hub $picked_upstream {
-      default all-hubs;
-      ~^(?P<name>[\w-]+) hub-$name;
+      default shard;
+      ~^(?P<name>[\w-]+) hubs/hub-$name;
     }
 
     map $http_x_forwarded_proto $forwarding_scheme {
         default $scheme;
         https https;
     }
+
+    underscores_in_headers on;
 
     server {
         error_log stderr;
@@ -49,8 +53,11 @@ http {
             proxy_set_header Connection $connection_upgrade;
 
             proxy_set_header X-Forwarded-Proto $forwarding_scheme;
+            proxy_set_header X-Forwarded-Host $host:$server_port;
             proxy_set_header X-Original-URI $request_uri;
             proxy_set_header Host $http_host;
+
+            proxy_pass_request_headers on;
         }
     }
 }
