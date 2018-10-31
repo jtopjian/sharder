@@ -35,7 +35,7 @@ class BarfHandler(tornado.web.RequestHandler):
     @gen.coroutine
     def get(self):
         log.app_log.info('Barf called')
-        self.write("Hello, world")
+        self.render('templates/page.html', hub='somehub')
 
 class HubHandler(tornado.web.RequestHandler):
     @gen.coroutine
@@ -79,7 +79,7 @@ if __name__ == "__main__":
     app = web.Application([
         (r"/shard", ShardHandler),
         (r"/hubs/(hub-[0-9]+)", HubHandler),
-        (r"/", BarfHandler),
+        (r"/barf", BarfHandler),
     ], 
     sharder=sharder, 
     header='REMOTE_USER',

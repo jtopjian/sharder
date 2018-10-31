@@ -18,6 +18,7 @@ ADD sharder.py /srv/hubsharder/sharder.py
 ADD request-sharder.py /srv/hubsharder/request-sharder.py
 ADD wait-for-it.sh /srv/hubsharder/wait-for-it.sh
 RUN chmod +x /srv/hubsharder/wait-for-it.sh
+ADD templates /srv/hubsharder/templates
 
 WORKDIR /srv/hubsharder
 
