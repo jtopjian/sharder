@@ -29,19 +29,13 @@ class ShardHandler(tornado.web.RequestHandler):
 
         self.set_cookie('hub', hub)
         #self.request.headers['Cookie'] = f'hub={hub}'
-        self.redirect('/barf')
-
-class BarfHandler(tornado.web.RequestHandler):
-    @gen.coroutine
-    def get(self):
-        log.app_log.info('Barf called')
-        self.render('templates/page.html', hub='somehub')
+        self.redirect('/hubs')
 
 class HubHandler(tornado.web.RequestHandler):
     @gen.coroutine
     def get(self, hub):
         log.app_log.info('Hub Handler')
-        self.write(f'hub assigned: {hub}')
+        self.render('templates/page.html')
 
 if __name__ == "__main__":
     from sqlalchemy import create_engine
@@ -79,7 +73,6 @@ if __name__ == "__main__":
     app = web.Application([
         (r"/shard", ShardHandler),
         (r"/hubs/(hub-[0-9]+)", HubHandler),
-        (r"/barf", BarfHandler),
     ], 
     sharder=sharder, 
     header='REMOTE_USER',

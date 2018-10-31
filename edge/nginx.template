@@ -29,7 +29,7 @@ http {
     # Look for a cookie called hub and pick the upstream location
     map $cookie_hub $picked_upstream {
       default shard;
-      ~^(?P<name>[\w-]+) hubs/hub-$name;
+      ~^(?P<name>[\w-]+) hubs/$name;
     }
 
     map $http_x_forwarded_proto $forwarding_scheme {
