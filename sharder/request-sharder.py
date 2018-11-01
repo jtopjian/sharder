@@ -66,6 +66,7 @@ if __name__ == "__main__":
         password = os.environ['POSTGRES_PASSWORD']
         database = os.environ['POSTGRES_DB']
         engine = create_engine(f'postgresql://{username}:{password}@db/{database}', connect_args={'connect_timeout': 10})
+        log.app_log.info(f'Postgresql DB init')
     else:
         ##
         ## sqlite (in memory)
@@ -78,6 +79,7 @@ if __name__ == "__main__":
         ##
         creator = lambda: sqlite3.connect('file::memory:?cache=shared', uri=True)
         engine = create_engine('sqlite://', creator=creator, echo=True)
+        log.app_log.info(f'Sqlite3 DB init')
     
     sharder_buckets = [f'hub-{hub}' for hub in range(5)]
 
