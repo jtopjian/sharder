@@ -19,7 +19,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
     depends_on:
       - db
-    command: ["./wait-for-it.sh", "db:5432", "--", "python3.6", "/srv/hubsharder/request_sharder.py"]
+    command: ["./wait-for-it.sh", "db:5432", "--", "python3.6", "/srv/hubsharder/request_sharder.py", "--postgres"]
 
   db:
     image: postgres

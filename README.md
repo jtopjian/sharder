@@ -34,23 +34,63 @@ for the new assignment, set the cookie, and send the user back to nginx.
 
 ## Running the Sharder
 
-### As an application
+A docker-compose file is provided to spin up nginx, postgresql and tornado,
+implementing the full sharder application stack, buy you can also run the
+sharder as a standalone application.
 
-A docker-compose file will be provided to spin up nginx, postgresql and tornado,
-implementing the full sharder application stack. For the moment
+### As a Standalone Application
+
 ```
-python3.6 request-sharder.py
+python3.6 ./sharder/request-sharder.py
 ```
-Will initialize a sqlite database (with the right behaviour for multiple
+This will initialize a sqlite database (with the right behaviour for multiple
 connections) and setup a tornado webserver. You can make requests against the
 webserver with the REMOTE_USER header set, e.g.
 ```
-  curl -H 'REMOTE_USER: iana 127.0.0.1:8888
+  curl -H 'REMOTE_USER: iana 127.0.0.1:8888/shard
 ```
 The output of the request-sharder application should let you know the result of
-the assignment.
+the assignment. This assignment should be stable across subsequent requests.
 
-### Standalone/pytest
+### As a multi-part application
+
+A docker-compose file is provided which will create a database, the sharder and
+and an nginx "edge" server. The database must be configured as part of the build
+process by setting the environment variables POSTGRES_USER, POSTGRES_PASSSWORD
+and POSTGRES_DB, e.g.
+
+```
+  $ vi sharding.env  # This name is already part of the .gitignore
+POSTGRES_USER="shard_user"
+POSTGRES_PASSWORD="some long random password here"
+POSTGRES_DB="hubshards"
+export POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB
+
+  $ source sharding.env
+```
+
+Please note that in the default configuration a new docker volume will be
+created for the database each time you `docker-compose up`.
+```
+  $ docker-compose build
+  $ docker-compuse up -d
+```
+
+The sharder has a dependency on the database so it is launched by wait-for-it.sh
+to give the database time to be prepared, once it is ready the sharder will
+apply the schema and wait to service requests.
+
+You can use an extensions such as
+[ModHeader](https://chrome.google.com/webstore/detail/modheader/idgpnmonknjnojddfkpgkljpfnnfcklj/related?hl=en)
+to set the REMOTE_USER header and the Chrome developer tools to check the value
+of the `hub` cookie. Try visiting 127.0.0.1:8080/shard (remember to delete the
+hub cookie if you update the REMOTE_USER header). To see the logs on the sharder
+you can run
+```
+  $ docker-compose logs sharder
+```
+
+### pytest
 
 test_sharder.py defines an in-memory sqlite database to test the sharder
 application. The tests demonstrate how to add new rows to the database and check

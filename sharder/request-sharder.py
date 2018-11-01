@@ -29,7 +29,7 @@ class ShardHandler(tornado.web.RequestHandler):
 
         self.set_cookie('hub', hub)
         #self.request.headers['Cookie'] = f'hub={hub}'
-        self.redirect('/hubs')
+        self.redirect(f'/hubs/{hub}')
 
 class HubHandler(tornado.web.RequestHandler):
     @gen.coroutine
@@ -38,33 +38,46 @@ class HubHandler(tornado.web.RequestHandler):
         self.render('templates/page.html')
 
 if __name__ == "__main__":
-    from sqlalchemy import create_engine
-    from sharder import Sharder, Base
+    import getopt
     import os
     import sqlite3
+    import sys
+    
+    from sqlalchemy import create_engine
+    from sharder import Sharder, Base
 
     log.enable_pretty_logging()
 
-    # Give ourselves a database to play with. This should probably become an
-    # application configuration item e.g. --sqlite, --posgtres. Anything that
-    # returns an engine should work
+    # Give ourselves a database to play with. Anything that returns an engine
+    # should work, default to sqlite in memory
+    database = 'sqlite' 
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "p", ["postgres"])
+    except getopt.GetoptError:
+        print(f"{sys.argv[0]} [--postgres]")
+        sys.exit(2)
 
-    ##
-    ## sqlite (in memory)
-    ##
-    # We have to be careful with in memory databases and shared cache, see
-    # https://stackoverflow.com/questions/27910829/sqlalchemy-and-sqlite-shared-cache
+    for opt, arg in opts:
+        if opt in ("-p", "--postgres"):
+            database = 'postgres'
 
-    ##
-    ## postgresql
-    ##
-    #creator = lambda: sqlite3.connect('file::memory:?cache=shared', uri=True)
-    #engine = create_engine('sqlite://', creator=creator, echo=True)
-    username = os.environ['POSTGRES_USER']
-    password = os.environ['POSTGRES_PASSWORD']
-    database = os.environ['POSTGRES_DB']
-    engine = create_engine(f'postgresql://{username}:{password}@db/{database}',
-            connect_args={'connect_timeout': 10})
+    if database == 'postgres':
+        username = os.environ['POSTGRES_USER']
+        password = os.environ['POSTGRES_PASSWORD']
+        database = os.environ['POSTGRES_DB']
+        engine = create_engine(f'postgresql://{username}:{password}@db/{database}', connect_args={'connect_timeout': 10})
+    else:
+        ##
+        ## sqlite (in memory)
+        ##
+        # We have to be careful with in memory databases and shared cache, see
+        # https://stackoverflow.com/questions/27910829/sqlalchemy-and-sqlite-shared-cache
+
+        ##
+        ## postgresql
+        ##
+        creator = lambda: sqlite3.connect('file::memory:?cache=shared', uri=True)
+        engine = create_engine('sqlite://', creator=creator, echo=True)
     
     sharder_buckets = [f'hub-{hub}' for hub in range(5)]
 
