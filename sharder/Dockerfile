@@ -22,4 +22,4 @@ ADD templates /srv/hubsharder/templates
 
 WORKDIR /srv/hubsharder
 
-ENTRYPOINT ["/srv/hubsharder/wait-for-it.sh", "db:5432", "--", "python3.6", "/srv/hubsharder/request-sharder.py", "--postgres"]
+ENTRYPOINT ["/srv/hubsharder/wait-for-it.sh", "-t", "60", "db:5432", "--", "python3.6", "/srv/hubsharder/request-sharder.py", "--postgres"]
