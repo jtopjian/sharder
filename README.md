@@ -69,8 +69,9 @@ export POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB
   $ source sharding.env
 ```
 
-Please note that in the default configuration a new docker volume will be
-created for the database each time you `docker-compose up`.
+A new directory called db will be created in this directory and will be used to
+store the hub database files persistently. If you want do reset the system it is
+safe to delete this directory.
 ```
   $ docker-compose build
   $ docker-compuse up -d
@@ -88,6 +89,36 @@ hub cookie if you update the REMOTE_USER header). To see the logs on the sharder
 you can run
 ```
   $ docker-compose logs sharder
+```
+
+If you want to inspect the database you can use psql in the db container, e.g.
+```
+  $ docker-compose exec db psql -U $POSTGRES_USER -d $POSTGRES_DB
+psql (10.5 (Debian 10.5-1.pgdg90+1))
+Type "help" for help.
+
+hubshards=# \c hubshards
+You are now connected to database "hubshards" as user "shard_user".
+hubshards=# \dt
+          List of relations
+ Schema | Name  | Type  |   Owner    
+--------+-------+-------+------------
+ public | shard | table | shard_user
+(1 row)
+
+hubshards=# SELECT * from shard;
+ id | kind | bucket |    name     
+----+------+--------+-------------
+  1 | hub  | hub-0  | dummy-hub-0
+  2 | hub  | hub-1  | dummy-hub-1
+  3 | hub  | hub-2  | dummy-hub-2
+  4 | hub  | hub-3  | dummy-hub-3
+  5 | hub  | hub-4  | dummy-hub-4
+  6 | hub  | hub-0  | iana
+  7 | hub  | hub-1  | brian
+(7 rows)
+
+hubshards=# \q
 ```
 
 ### pytest

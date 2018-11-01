@@ -16,7 +16,7 @@ class Sharder:
         self.buckets = buckets
         self.log = log
 
-        Base.metadata.create_all(engine)
+        Base.metadata.create_all(engine, checkfirst=True)
 
         Session = sessionmaker()
         Session.configure(bind=engine)
@@ -24,8 +24,9 @@ class Sharder:
         
         # Make sure that we have at least one dummy entry for each bucket
         for bucket in buckets:
-            self.session.add(Shard(kind=self.kind, bucket=bucket, name=f'dummy-{bucket}'))
-            self.session.commit()
+            if self.session.query(Shard.bucket).filter_by(bucket=bucket, name=f'dummy-{bucket}').scalar() is None:
+                self.session.add(Shard(kind=self.kind, bucket=bucket, name=f'dummy-{bucket}'))
+                self.session.commit()
 
     def shard(self, name):
         """
