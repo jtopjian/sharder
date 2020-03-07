@@ -19,18 +19,15 @@ the bin with the fewest assignments.
 
 ## Implementation
 
-The sharder is meant to be run as an (tornado) web application, integrated with
-nginx and protected behind some form of authentication. Incoming requests
-contain a username (from authentication) which the sharder uses, together with a
-list of hubs, to make a permanent user-hub assignment.
+The sharder is means to run as a service, whether using Docker or systemd.
+It's designed as a REST-based web application and expects a REMOTE_USER
+header to be already set when it receives requests. This means that you need
+to put the service behind a web server like Apache or nginx.
 
-All incoming requests start on Nginx which checks for a cookie (set by the
-application) to decide the next hop. If the cookie is set, it will specify the
-name of a hub and nginx simply sends the user to that hub. If the cookie is not
-set, the request is sent to the sharder which will try to find an existing
-assignment. If it does, it will set the cookie to that value and redirect back
-to nginx. If it does not, it will implement the sharding policy, add a record
-for the new assignment, set the cookie, and send the user back to nginx.
+The sharder will then take the value of REMOTE_USER and see if the user has
+already been assigned a bucket. If so, the name of the bucket will be returned.
+If not, a bucket will be assigned. Either way, a cookie called "hub" will
+be set with the determined value.
 
 ## Running the Sharder
 
@@ -40,15 +37,29 @@ sharder as a standalone application.
 
 ### As a Standalone Application
 
+You can use systemd with a unit file such as:
+
 ```
-python3.6 ./sharder/request-sharder.py
+[root@sharder-profound-moose sharder]# cat /etc/systemd/system/sharder.service
+[Unit]
+Description=JupyterHub Sharder
+
+[Service]
+ExecStart=/bin/python3.6 /srv/sharder/request-sharder.py --config-file /srv/sharder/sharder.yml
+Restart=on-failure
+
+[Install]
+WantedBy=ulti-user.target
 ```
-This will initialize a sqlite database (with the right behaviour for multiple
+
+This will initialize a database (with the right behaviour for multiple
 connections) and setup a tornado webserver. You can make requests against the
 webserver with the REMOTE_USER header set, e.g.
+
 ```
   curl -H 'REMOTE_USER: iana 127.0.0.1:8888/shard
 ```
+
 The output of the request-sharder application should let you know the result of
 the assignment. This assignment should be stable across subsequent requests.
 
@@ -66,12 +77,19 @@ POSTGRES_PASSWORD="some long random password here"
 POSTGRES_DB="hubshards"
 export POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB
 
+MYSQL_USER="shard_user"
+MYSQL_PASSWORD="some long random password here"
+MYSQL_ROOT_PASSWORD="some long random password here"
+MYSQL_DATABASE="hubshards"
+export MYSQL_ROOT_PASSWORD MYSQL_USER MYSQL_PASSWORD MYSQL_DATABASE
+
   $ source sharding.env
 ```
 
 A new directory called db will be created in this directory and will be used to
 store the hub database files persistently. If you want do reset the system it is
 safe to delete this directory.
+
 ```
   $ docker-compose build
   $ docker-compuse up -d
@@ -87,11 +105,13 @@ to set the REMOTE_USER header and the Chrome developer tools to check the value
 of the `hub` cookie. Try visiting 127.0.0.1:8080/shard (remember to delete the
 hub cookie if you update the REMOTE_USER header). To see the logs on the sharder
 you can run
+
 ```
   $ docker-compose logs sharder
 ```
 
 If you want to inspect the database you can use psql in the db container, e.g.
+
 ```
   $ docker-compose exec db psql -U $POSTGRES_USER -d $POSTGRES_DB
 psql (10.5 (Debian 10.5-1.pgdg90+1))
@@ -126,6 +146,7 @@ hubshards=# \q
 test_sharder.py defines an in-memory sqlite database to test the sharder
 application. The tests demonstrate how to add new rows to the database and check
 that they are "fairly" assigned according to the sharder policy.
+
 ```
  $ pytest
  ...
